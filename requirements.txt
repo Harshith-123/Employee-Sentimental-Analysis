@@ -1,0 +1,17 @@
+# Core (required)
+pandas>=2.0
+numpy>=1.24
+scikit-learn>=1.3
+matplotlib>=3.8
+vaderSentiment>=3.3.2
+python-dotenv>=1.0
+python-docx>=1.1        # builds reports/Final_Report.docx
+jupyter>=1.0
+nbconvert>=7.0
+pytest>=7.0
+
+# Optional sentiment back-ends (uncomment the one you want)
+# transformers>=4.40    # SENTIMENT_METHOD=transformer
+# torch>=2.2
+# anthropic>=0.40       # SENTIMENT_METHOD=llm, LLM_PROVIDER=anthropic
+# openai>=1.40          # SENTIMENT_METHOD=llm, LLM_PROVIDER=openai

@@ -1,0 +1,161 @@
+{
+  "overview": {
+    "records": 2191,
+    "columns": [
+      "Subject",
+      "body",
+      "date",
+      "from"
+    ],
+    "duplicate_rows": 0,
+    "employees": 10,
+    "date_min": "2010-01-01",
+    "date_max": "2011-12-31",
+    "months": 24,
+    "median_words": 27.0,
+    "empty_bodies": 70
+  },
+  "sentiment_counts": {
+    "Positive": 1573,
+    "Neutral": 445,
+    "Negative": 173
+  },
+  "latest_month": "2011-12",
+  "latest_top_positive": [
+    {
+      "employee": "eric.bass@enron.com",
+      "monthly_score": 12
+    },
+    {
+      "employee": "patti.thompson@enron.com",
+      "monthly_score": 12
+    },
+    {
+      "employee": "lydia.delgado@enron.com",
+      "monthly_score": 10
+    }
+  ],
+  "latest_top_negative": [
+    {
+      "employee": "johnny.palmer@enron.com",
+      "monthly_score": 1
+    },
+    {
+      "employee": "bobette.riner@ipgdirect.com",
+      "monthly_score": 3
+    },
+    {
+      "employee": "john.arnold@enron.com",
+      "monthly_score": 4
+    }
+  ],
+  "overall_ranking": [
+    {
+      "employee": "lydia.delgado@enron.com",
+      "total_score": 187
+    },
+    {
+      "employee": "john.arnold@enron.com",
+      "total_score": 179
+    },
+    {
+      "employee": "patti.thompson@enron.com",
+      "total_score": 147
+    },
+    {
+      "employee": "eric.bass@enron.com",
+      "total_score": 145
+    },
+    {
+      "employee": "don.baughman@enron.com",
+      "total_score": 135
+    },
+    {
+      "employee": "sally.beck@enron.com",
+      "total_score": 134
+    },
+    {
+      "employee": "johnny.palmer@enron.com",
+      "total_score": 130
+    },
+    {
+      "employee": "bobette.riner@ipgdirect.com",
+      "total_score": 126
+    },
+    {
+      "employee": "rhonda.denton@enron.com",
+      "total_score": 112
+    },
+    {
+      "employee": "kayne.coulter@enron.com",
+      "total_score": 105
+    }
+  ],
+  "flight_risk": [
+    {
+      "employee": "sally.beck@enron.com",
+      "max_negatives_in_30d": "5",
+      "first_flagged_window_start": "2011-08-06",
+      "qualifying_windows": "2",
+      "total_negative_messages": "25"
+    },
+    {
+      "employee": "bobette.riner@ipgdirect.com",
+      "max_negatives_in_30d": "4",
+      "first_flagged_window_start": "2011-03-26",
+      "qualifying_windows": "1",
+      "total_negative_messages": "23"
+    },
+    {
+      "employee": "eric.bass@enron.com",
+      "max_negatives_in_30d": "4",
+      "first_flagged_window_start": "2011-04-22",
+      "qualifying_windows": "2",
+      "total_negative_messages": "15"
+    },
+    {
+      "employee": "john.arnold@enron.com",
+      "max_negatives_in_30d": "4",
+      "first_flagged_window_start": "2010-05-25",
+      "qualifying_windows": "1",
+      "total_negative_messages": "12"
+    },
+    {
+      "employee": "johnny.palmer@enron.com",
+      "max_negatives_in_30d": "4",
+      "first_flagged_window_start": "2010-02-09",
+      "qualifying_windows": "2",
+      "total_negative_messages": "21"
+    },
+    {
+      "employee": "kayne.coulter@enron.com",
+      "max_negatives_in_30d": "4",
+      "first_flagged_window_start": "2010-04-06",
+      "qualifying_windows": "1",
+      "total_negative_messages": "18"
+    },
+    {
+      "employee": "patti.thompson@enron.com",
+      "max_negatives_in_30d": "4",
+      "first_flagged_window_start": "2011-07-02",
+      "qualifying_windows": "1",
+      "total_negative_messages": "20"
+    }
+  ],
+  "model": {
+    "n_rows": 240,
+    "n_train": 192,
+    "n_test": 48,
+    "train_r2": 0.8155242198307247,
+    "test_r2": 0.8231246529171423,
+    "test_mae": 1.3727491910662062,
+    "test_rmse": 1.7874034118475093,
+    "baseline_test_mae": 3.5651041666666665,
+    "baseline_test_rmse": 4.251276360629175,
+    "cv5_r2_mean": 0.7996312049416189,
+    "cv5_r2_std": 0.03273817090970691,
+    "intercept": 5.854166666666667
+  },
+  "company_trend_slope_per_month": 0.04530434782608696,
+  "sentiment_method": "{\"method\": \"vader\", \"vader_thresholds\": [-0.05, 0.05], \"transformer_model\": \"cardiffnlp/twitter-roberta-base-sentiment-latest\", \"llm\": \"anthropic:claude-haiku-5-5\"}"
+}

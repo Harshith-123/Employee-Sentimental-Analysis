@@ -1,0 +1,8 @@
+employee,max_negatives_in_30d,first_flagged_window_start,qualifying_windows,total_negative_messages
+sally.beck@enron.com,5,2011-08-06,2,25
+bobette.riner@ipgdirect.com,4,2011-03-26,1,23
+eric.bass@enron.com,4,2011-04-22,2,15
+john.arnold@enron.com,4,2010-05-25,1,12
+johnny.palmer@enron.com,4,2010-02-09,2,21
+kayne.coulter@enron.com,4,2010-04-06,1,18
+patti.thompson@enron.com,4,2011-07-02,1,20
