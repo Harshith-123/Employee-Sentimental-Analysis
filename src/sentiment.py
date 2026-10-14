@@ -23,6 +23,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Iterable
 
 import pandas as pd
@@ -76,43 +79,91 @@ LLM_PROMPT = (
 )
 
 
-def _llm_call(text: str) -> str:
-    prompt = LLM_PROMPT.format(text=text[:4000])
-    if C.LLM_PROVIDER == "openai":
-        from openai import OpenAI
+LLM_CACHE_PATH = C.DATA_DIR / "llm_cache.csv"   # committed, so reviewers can reproduce without an API key
+_LABEL_RE = re.compile(r"\b(positive|negative|neutral)\b", re.I)
+_client = None
 
-        client = OpenAI(api_key=C.OPENAI_API_KEY)
-        r = client.chat.completions.create(
-            model=C.LLM_MODEL, temperature=0, max_tokens=3,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        answer = r.choices[0].message.content
+
+def _get_client():
+    """Create the API client once (thread-safe enough for read-only reuse)."""
+    global _client
+    if _client is None:
+        if C.LLM_PROVIDER == "openai":
+            from openai import OpenAI
+
+            if not C.OPENAI_API_KEY or C.OPENAI_API_KEY.startswith("your-"):
+                raise RuntimeError("OPENAI_API_KEY is not set in .env")
+            _client = OpenAI(api_key=C.OPENAI_API_KEY)
+        else:
+            import anthropic
+
+            if not C.ANTHROPIC_API_KEY or C.ANTHROPIC_API_KEY.startswith("your-"):
+                raise RuntimeError("ANTHROPIC_API_KEY is not set in .env")
+            _client = anthropic.Anthropic(api_key=C.ANTHROPIC_API_KEY)
+    return _client
+
+
+def parse_label(answer: str) -> str:
+    """Map the model's reply to a label; anything unparseable -> Neutral."""
+    m = _LABEL_RE.search(answer or "")
+    return m.group(1).capitalize() if m else "Neutral"
+
+
+def _llm_call(text: str, retries: int = 6) -> str:
+    """Classify one message, retrying with exponential backoff on API errors / rate limits."""
+    prompt = LLM_PROMPT.format(text=(text or "")[:4000])
+    client = _get_client()
+    for attempt in range(retries):
+        try:
+            if C.LLM_PROVIDER == "openai":
+                r = client.chat.completions.create(
+                    model=C.LLM_MODEL, temperature=0,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                return parse_label(r.choices[0].message.content)
+            r = client.messages.create(
+                model=C.LLM_MODEL, max_tokens=10, temperature=0,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return parse_label(r.content[0].text)
+        except Exception as exc:  # rate limit, timeout, overloaded ...
+            if attempt == retries - 1:
+                raise RuntimeError(f"LLM call failed after {retries} attempts: {exc}") from exc
+            time.sleep(min(60, 2 ** attempt))
+    return "Neutral"  # pragma: no cover
+
+
+def _save_cache(cache: dict) -> None:
+    pd.DataFrame(sorted(cache.items()), columns=["hash", "label"]).to_csv(LLM_CACHE_PATH, index=False)
+
+
+def label_llm(texts: Iterable[str], workers: int | None = None) -> pd.DataFrame:
+    """Label with an LLM. Results are cached per message hash in data/llm_cache.csv:
+    reruns cost nothing, an interrupted run resumes where it stopped, and anyone
+    with the cache file reproduces the exact labels without an API key."""
+    texts = [t or "" for t in texts]
+    cache = dict(pd.read_csv(LLM_CACHE_PATH).values) if LLM_CACHE_PATH.exists() else {}
+    keys = [hashlib.sha1(t.encode()).hexdigest() for t in texts]
+    todo = {k: t for k, t in zip(keys, texts) if k not in cache}
+
+    if todo:
+        workers = workers or C.LLM_WORKERS
+        print(f"LLM labeling: {len(todo)} new messages via {C.LLM_PROVIDER}:{C.LLM_MODEL} "
+              f"({len(cache)} already cached, {workers} parallel requests)")
+        done = 0
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {pool.submit(_llm_call, t): k for k, t in todo.items()}
+            for fut in as_completed(futures):
+                cache[futures[fut]] = fut.result()
+                done += 1
+                if done % 100 == 0 or done == len(todo):
+                    _save_cache(cache)   # checkpoint so a crash loses at most 100 calls
+                    print(f"  {done}/{len(todo)} labeled")
     else:
-        import anthropic
+        print(f"LLM labeling: all {len(texts)} messages found in {LLM_CACHE_PATH.name} (no API calls)")
 
-        client = anthropic.Anthropic(api_key=C.ANTHROPIC_API_KEY)
-        r = client.messages.create(
-            model=C.LLM_MODEL, max_tokens=5, temperature=0,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        answer = r.content[0].text
-    answer = (answer or "").strip().capitalize().rstrip(".")
-    return answer if answer in C.LABELS else "Neutral"
-
-
-def label_llm(texts: Iterable[str]) -> pd.DataFrame:
-    cache_path = C.PROCESSED_DIR / "llm_cache.csv"
-    cache = (
-        dict(pd.read_csv(cache_path).values) if cache_path.exists() else {}
-    )
-    labels = []
-    for t in texts:
-        key = hashlib.sha1((t or "").encode()).hexdigest()
-        if key not in cache:
-            cache[key] = _llm_call(t or "")
-        labels.append(cache[key])
-    pd.DataFrame(list(cache.items()), columns=["hash", "label"]).to_csv(cache_path, index=False)
-    return pd.DataFrame({"sentiment_score_raw": [None] * len(labels), "sentiment": labels})
+    labels = [cache[k] for k in keys]
+    return pd.DataFrame({"sentiment_score_raw": [float("nan")] * len(labels), "sentiment": labels})
 
 
 # --------------------------------------------------------------- facade

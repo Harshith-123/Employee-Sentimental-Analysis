@@ -59,3 +59,11 @@ def test_three_negatives_not_flagged():
     df = _frame([("z", d, "Negative") for d in ["2011-01-01", "2011-01-02", "2011-01-03"]]
                 + [("z", "2011-01-04", "Positive")])
     assert flight_risk_employees(df).empty
+
+
+def test_llm_reply_parsing():
+    from src.sentiment import parse_label
+    assert parse_label("Positive") == "Positive"
+    assert parse_label("negative.") == "Negative"
+    assert parse_label("Sentiment: Neutral") == "Neutral"
+    assert parse_label("I cannot tell") == "Neutral"

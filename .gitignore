@@ -5,4 +5,3 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
-data/processed/llm_cache.csv

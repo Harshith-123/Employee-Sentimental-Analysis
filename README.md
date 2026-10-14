@@ -8,7 +8,8 @@ NLP and statistical analysis of an unlabeled dataset of employee e-mails (`test.
 
 ## Summary of results
 
-> Dataset: 2,191 messages · 10 employees · Jan 2010 – Dec 2011 (24 months). Labeling: VADER (default, reproducible offline).
+<!-- RESULTS:START -->
+> Dataset: 2,191 messages · 10 employees · Jan 2010 – Dec 2011 (24 months). Labeling: VADER (lexicon + rule-based NLP model).
 
 **Sentiment:** 1,573 Positive (71.8%) · 445 Neutral (20.3%) · 173 Negative (7.9%)
 
@@ -20,7 +21,7 @@ NLP and statistical analysis of an unlabeled dataset of employee e-mails (`test.
 | 2 | patti.thompson@enron.com | 12 | bobette.riner@ipgdirect.com | 3 |
 | 3 | lydia.delgado@enron.com | 10 | john.arnold@enron.com | 4 |
 
-eric.bass and patti.thompson are tied at 12; the tie is broken alphabetically. Rankings for all 24 months are in `data/processed/monthly_rankings.csv` and in the notebook. Over the whole period, **john.arnold** made the monthly top-3 positive most often (13 of 24 months). **kayne.coulter** and **don.baughman** made the top-3 negative most often (11 months each).
+Ties are broken alphabetically. Rankings for all months are in `data/processed/monthly_rankings.csv` and in the notebook. Across all 24 months, **john.arnold@enron.com** made the monthly top-3 positive most often (13 months), and **don.baughman@enron.com and kayne.coulter@enron.com** the top-3 negative most often (11 months).
 
 ### Employees flagged as flight risk (≥ 4 negative messages within any rolling 30 days)
 
@@ -34,26 +35,20 @@ eric.bass and patti.thompson are tied at 12; the tie is broken alphabetically. R
 | kayne.coulter@enron.com | 4 | 2010-04-06 → 2010-05-05 |
 | patti.thompson@enron.com | 4 | 2011-07-02 → 2011-07-31 |
 
-A calendar-month count would catch only 4 of these 7. The rolling window also finds bobette.riner, john.arnold and johnny.palmer, whose bursts of negativity cross a month boundary.
+A calendar-month count would catch only 4 of these 7. The rolling window also finds bobette.riner@ipgdirect.com, john.arnold@enron.com and johnny.palmer@enron.com, whose bursts of negativity cross a month boundary.
 
 ### Predictive model
 
-Linear regression of the monthly score achieves **test R² = 0.82**, MAE = 1.37 and RMSE = 1.79. A mean-only baseline scores MAE = 3.57 and RMSE = 4.25. 5-fold cross-validation gives R² = 0.80 ± 0.03, so the model does not overfit. **Message volume is the dominant driver**: more messages lead to a higher score, because most messages are positive.
+Linear regression of the monthly score achieves **test R² = 0.82**, MAE = 1.37 and RMSE = 1.79. A mean-only baseline scores MAE = 3.57 and RMSE = 4.25. 5-fold cross-validation gives R² = 0.80 ± 0.03. The company-wide average score trends +0.045 points per month.
 
 ### Key insights and recommendations
 
-1. **Sentiment is healthy and stable.** About 72% of messages are positive, and the company-wide average score rises slightly (+0.045 points per month). Risk appears as short **bursts** of negativity, not as persistently negative employees.
-2. **Prioritise sally.beck and kayne.coulter for check-ins.**
-   - sally.beck has the strongest burst (5 negative messages in 30 days) and the highest negative share overall.
-   - kayne.coulter is in the top-3 negative in 11 of 24 months and has three non-positive months.
-3. **Use the rolling-window flag in reporting, not a monthly count.** It surfaces 3 additional at-risk employees.
-4. **Report the average score per message alongside the monthly sum.** The sum rewards volume, so quiet employees can look less engaged than they are.
-5. **Data caveats:**
-   - Message dates look synthetically assigned: monthly volume is flat and weekends are as busy as weekdays.
-   - 625 messages repeat earlier content.
-   - The lexicon labeler marks a few factual messages (e.g. automatic warnings) as negative.
-
-   Use the LLM labeler (`SENTIMENT_METHOD=llm`) for production, and review flagged windows before acting.
+1. Overall sentiment is healthy (71.8% positive). The risk signal comes from short **bursts** of negativity rather than persistently negative employees.
+2. Prioritise check-ins with **sally.beck@enron.com** (strongest burst: 5 negatives in 30 days from 2011-08-06) and **don.baughman@enron.com and kayne.coulter@enron.com** (top-3 negative in 11 of 24 months).
+3. Use the **rolling-window** flag operationally. It catches 3 employee(s) a monthly report would miss.
+4. Monthly scores are volume-driven. Report the average score per message alongside the sum, so quiet employees are not mislabelled as disengaged.
+5. Review each flagged window's messages before acting: automated sentiment is a screening tool, not a verdict.
+<!-- RESULTS:END -->
 
 ---
 
@@ -73,10 +68,12 @@ employee-sentiment-analysis/
 │   ├── flight_risk.py     # Task 5 rolling 30-day flight-risk detection
 │   ├── modeling.py        # Task 6 linear regression + company trend
 │   ├── pipeline.py        # orchestrates all steps (used by run_pipeline.py)
+│   ├── findings.py        # data-driven observations, README summary and report text
 │   └── report.py          # builds reports/Final_Report.docx from outputs
 ├── tests/test_logic.py    # unit tests for scoring, ranking, flight-risk boundaries, cleaning
 ├── data/
 │   ├── raw/test.csv       # input dataset
+│   ├── llm_cache.csv      # cached LLM labels (present after an LLM run)
 │   └── processed/         # generated outputs (labeled data, scores, rankings, risks, metrics)
 ├── visualization/         # 14 PNG charts (EDA, rankings, flight risk, model performance)
 ├── reports/Final_Report.docx
@@ -122,15 +119,18 @@ jupyter notebook employee_sentiment_analysis.ipynb
 **Option B: command line (reproduces every output from raw data)**
 
 ```bash
-python run_pipeline.py                  # VADER labeling (default)
-python -m src.report                    # rebuild reports/Final_Report.docx
+python run_pipeline.py                  # uses SENTIMENT_METHOD from .env (default: vader)
 pytest -q                               # run the unit tests
 ```
 
-**Optional labeling back-ends**
+`run_pipeline.py` writes the outputs to `data/processed/` (CSV/JSON) and `visualization/` (PNG). It also regenerates the **results section of this README** and **`reports/Final_Report.docx`**, so the written findings always match the data. The notebook's observations are computed from the data in the same way.
+
+**Choosing the labeling back-end**
+
+The method is read from `SENTIMENT_METHOD` in `.env`, which both the notebook and `run_pipeline.py` use. You can also override it on the command line with `--method`.
 
 ```bash
-# LLM (Anthropic or OpenAI) - set the provider, model and API key in .env first
+# LLM (Anthropic or OpenAI): set SENTIMENT_METHOD=llm, LLM_PROVIDER, LLM_MODEL and the API key in .env
 pip install anthropic                   # or: pip install openai
 python run_pipeline.py --method llm
 
@@ -139,7 +139,10 @@ pip install transformers torch
 python run_pipeline.py --method transformer
 ```
 
-Outputs are written to `data/processed/` (CSV/JSON) and `visualization/` (PNG).
+LLM labels are cached in `data/llm_cache.csv`, one row per unique message. This has three effects:
+- Reruns make no API calls.
+- An interrupted run resumes where it stopped.
+- **Anyone with the cache reproduces the exact labels without an API key.** Set `SENTIMENT_METHOD=llm`, leave the key blank, and run.
 
 ---
 
@@ -157,13 +160,20 @@ Outputs are written to `data/processed/` (CSV/JSON) and `visualization/` (PNG).
 
 | Back-end | Description | Reproducibility |
 |---|---|---|
-| `vader` *(default)* | Lexicon + rule model built for informal text. Handles negation, intensifiers, punctuation and capitalisation. | Deterministic, offline |
+| `llm` | Claude or GPT, zero-shot prompt, temperature 0 | Cached per message in `data/llm_cache.csv` |
+| `vader` *(code default)* | Lexicon + rule model built for informal text. Handles negation, intensifiers, punctuation and capitalisation. | Deterministic, offline |
 | `transformer` | `cardiffnlp/twitter-roberta-base-sentiment-latest` | Deterministic |
-| `llm` | Claude or GPT, zero-shot prompt, temperature 0 | Cached per message hash |
 
-**Labeling rule (VADER):** compound ≥ 0.05 → **Positive**; compound ≤ −0.05 → **Negative**; otherwise **Neutral**. These are the standard thresholds from Hutto & Gilbert (2014) and are configurable in `.env`.
+The method used for the reported results is stated at the top of the results summary above.
 
-VADER is the default so any reviewer can reproduce the exact results without API keys or paid calls. The LLM back-end is the accuracy upgrade and needs no other code changes.
+**Labeling rule (LLM).** A fixed prompt (`LLM_PROMPT` in `src/sentiment.py`) asks the model for the overall sentiment the *sender* expresses, as exactly one word. It defines the three classes:
+- **Positive:** appreciation, enthusiasm, satisfaction, good news, friendly tone.
+- **Negative:** frustration, complaints, criticism, worry, bad news, conflict.
+- **Neutral:** purely informational, logistical or factual content.
+
+The reply is parsed to a single label; anything unparseable becomes Neutral. Temperature 0 keeps the output as stable as the API allows, and the cache makes the labels exactly reproducible. An LLM judges intent rather than individual words, so factual messages that merely contain words like "risk" or "warning" are not marked Negative.
+
+**Labeling rule (VADER).** compound ≥ 0.05 → **Positive**; compound ≤ −0.05 → **Negative**; otherwise **Neutral**. These are the standard thresholds from Hutto & Gilbert (2014) and are configurable in `.env`. VADER runs offline with no API key, so it is the fallback when no key or cache is available.
 
 ### 3. EDA (Task 2)
 

@@ -60,6 +60,7 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "anthropic").lower()  # anthropic | ope
 LLM_MODEL = os.getenv("LLM_MODEL", "claude-haiku-5-5")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+LLM_WORKERS = int(os.getenv("LLM_WORKERS", 8))   # parallel API requests (lower it if you hit rate limits)
 
 LABELS = ("Positive", "Neutral", "Negative")
 SCORE_MAP = {"Positive": 1, "Negative": -1, "Neutral": 0}

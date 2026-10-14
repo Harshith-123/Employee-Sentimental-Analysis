@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 
 from . import config as C
-from . import eda, flight_risk, modeling, preprocessing, scoring, sentiment
+from . import eda, findings, flight_risk, modeling, preprocessing, report, scoring, sentiment
 from . import visualization as viz
 
 
@@ -70,5 +70,11 @@ def run(method: str | None = None, verbose: bool = True) -> dict:
         "sentiment_method": sentiment.describe_method(method),
     }
     C.SUMMARY_PATH.write_text(json.dumps(summary, indent=2, default=str))
+
+    # regenerate every written finding from the data, so docs always match the results
+    findings.update_readme(findings.readme_summary_md(df, raw, scores, rankings, risk, windows, m, trend))
+    report_path = report.build(df=df, raw=raw, scores=scores, rankings=rankings, risk=risk,
+                               windows=windows, coefs=result["coefficients"], metrics=m, trend=trend)
+    log(f"README.md results section and {report_path} regenerated")
     return {"raw": raw, "df": df, "scores": scores, "rankings": rankings, "windows": windows,
             "risk": risk, "model_data": data, "model": result, "trend": trend, "summary": summary}
