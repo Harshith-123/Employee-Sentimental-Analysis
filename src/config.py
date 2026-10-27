@@ -43,10 +43,11 @@ COL_DATE = "date"
 COL_EMPLOYEE = "from"
 
 # ---------------------------------------------------- sentiment config
-# Labeling backend: "vader" (default, offline, deterministic),
-# "transformer" (Hugging Face model, needs `transformers` + `torch`),
-# or "llm" (OpenAI-compatible / Anthropic chat model, needs an API key).
-SENTIMENT_METHOD = os.getenv("SENTIMENT_METHOD", "vader").lower()
+# Labeling backend: "transformer" (default — Hugging Face RoBERTa model,
+# needs `transformers` + `torch`, no API key), "vader" (lexicon/rule-based,
+# offline, deterministic, lighter-weight fallback), or "llm" (OpenAI-compatible
+# / Anthropic chat model, needs an API key).
+SENTIMENT_METHOD = os.getenv("SENTIMENT_METHOD", "transformer").lower()
 
 # VADER compound-score thresholds (standard values from Hutto & Gilbert 2014)
 VADER_POS_THRESHOLD = float(os.getenv("VADER_POS_THRESHOLD", 0.05))

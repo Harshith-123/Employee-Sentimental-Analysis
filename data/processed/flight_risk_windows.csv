@@ -1,11 +1,6 @@
 employee,window_start,window_end,negatives_in_window
-bobette.riner@ipgdirect.com,2011-03-26,2011-04-24,4
-eric.bass@enron.com,2011-04-22,2011-05-21,4
-eric.bass@enron.com,2011-05-07,2011-06-05,4
-john.arnold@enron.com,2010-05-25,2010-06-23,4
-johnny.palmer@enron.com,2010-02-09,2010-03-10,4
-johnny.palmer@enron.com,2010-02-22,2010-03-23,4
-kayne.coulter@enron.com,2010-04-06,2010-05-05,4
-patti.thompson@enron.com,2011-07-02,2011-07-31,4
-sally.beck@enron.com,2011-08-06,2011-09-04,5
-sally.beck@enron.com,2011-08-15,2011-09-13,4
+john.arnold@enron.com,2010-06-06,2010-07-05,4
+john.arnold@enron.com,2010-06-14,2010-07-13,4
+patti.thompson@enron.com,2010-10-04,2010-11-02,4
+rhonda.denton@enron.com,2010-12-24,2011-01-22,4
+sally.beck@enron.com,2010-12-15,2011-01-13,4

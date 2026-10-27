@@ -9,43 +9,40 @@ NLP and statistical analysis of an unlabeled dataset of employee e-mails (`test.
 ## Summary of results
 
 <!-- RESULTS:START -->
-> Dataset: 2,191 messages · 10 employees · Jan 2010 – Dec 2011 (24 months). Labeling: VADER (lexicon + rule-based NLP model).
+> Dataset: 2,191 messages · 10 employees · Jan 2010 – Dec 2011 (24 months). Labeling: a RoBERTa transformer (cardiffnlp/twitter-roberta-base-sentiment-latest).
 
-**Sentiment:** 1,573 Positive (71.8%) · 445 Neutral (20.3%) · 173 Negative (7.9%)
+**Sentiment:** 520 Positive (23.7%) · 1,524 Neutral (69.6%) · 147 Negative (6.7%)
 
 ### Top three positive and negative employees (latest month, 2011-12)
 
 | Rank | Top positive | Score | Top negative | Score |
 |---|---|---|---|---|
-| 1 | eric.bass@enron.com | 12 | johnny.palmer@enron.com | 1 |
-| 2 | patti.thompson@enron.com | 12 | bobette.riner@ipgdirect.com | 3 |
-| 3 | lydia.delgado@enron.com | 10 | john.arnold@enron.com | 4 |
+| 1 | kayne.coulter@enron.com | 4 | bobette.riner@ipgdirect.com | 0 |
+| 2 | eric.bass@enron.com | 3 | don.baughman@enron.com | 1 |
+| 3 | patti.thompson@enron.com | 3 | john.arnold@enron.com | 1 |
 
-Ties are broken alphabetically. Rankings for all months are in `data/processed/monthly_rankings.csv` and in the notebook. Across all 24 months, **john.arnold@enron.com** made the monthly top-3 positive most often (13 months), and **don.baughman@enron.com and kayne.coulter@enron.com** the top-3 negative most often (11 months).
+Ties are broken alphabetically. Rankings for all months are in `data/processed/monthly_rankings.csv` and in the notebook. Across all 24 months, **bobette.riner@ipgdirect.com** made the monthly top-3 positive most often (12 months), and **don.baughman@enron.com** the top-3 negative most often (12 months).
 
 ### Employees flagged as flight risk (≥ 4 negative messages within any rolling 30 days)
 
 | Employee | Max negatives in 30 days | First flagged window |
 |---|---|---|
-| sally.beck@enron.com | 5 | 2011-08-06 → 2011-09-04 |
-| bobette.riner@ipgdirect.com | 4 | 2011-03-26 → 2011-04-24 |
-| eric.bass@enron.com | 4 | 2011-04-22 → 2011-05-21 |
-| john.arnold@enron.com | 4 | 2010-05-25 → 2010-06-23 |
-| johnny.palmer@enron.com | 4 | 2010-02-09 → 2010-03-10 |
-| kayne.coulter@enron.com | 4 | 2010-04-06 → 2010-05-05 |
-| patti.thompson@enron.com | 4 | 2011-07-02 → 2011-07-31 |
+| john.arnold@enron.com | 4 | 2010-06-06 → 2010-07-05 |
+| patti.thompson@enron.com | 4 | 2010-10-04 → 2010-11-02 |
+| rhonda.denton@enron.com | 4 | 2010-12-24 → 2011-01-22 |
+| sally.beck@enron.com | 4 | 2010-12-15 → 2011-01-13 |
 
-A calendar-month count would catch only 4 of these 7. The rolling window also finds bobette.riner@ipgdirect.com, john.arnold@enron.com and johnny.palmer@enron.com, whose bursts of negativity cross a month boundary.
+A calendar-month count would catch only 2 of these 4. The rolling window also finds rhonda.denton@enron.com and sally.beck@enron.com, whose bursts of negativity cross a month boundary.
 
 ### Predictive model
 
-Linear regression of the monthly score achieves **test R² = 0.82**, MAE = 1.37 and RMSE = 1.79. A mean-only baseline scores MAE = 3.57 and RMSE = 4.25. 5-fold cross-validation gives R² = 0.80 ± 0.03. The company-wide average score trends +0.045 points per month.
+Linear regression of the monthly score achieves **test R² = 0.35**, MAE = 1.26 and RMSE = 1.74. A mean-only baseline scores MAE = 1.67 and RMSE = 2.17. 5-fold cross-validation gives R² = 0.21 ± 0.12. The company-wide average score trends +0.034 points per month.
 
 ### Key insights and recommendations
 
-1. Overall sentiment is healthy (71.8% positive). The risk signal comes from short **bursts** of negativity rather than persistently negative employees.
-2. Prioritise check-ins with **sally.beck@enron.com** (strongest burst: 5 negatives in 30 days from 2011-08-06) and **don.baughman@enron.com and kayne.coulter@enron.com** (top-3 negative in 11 of 24 months).
-3. Use the **rolling-window** flag operationally. It catches 3 employee(s) a monthly report would miss.
+1. Overall sentiment is mixed (23.7% positive). The risk signal comes from short **bursts** of negativity rather than persistently negative employees.
+2. Prioritise check-ins with **john.arnold@enron.com** (strongest burst: 4 negatives in 30 days from 2010-06-06) and **don.baughman@enron.com** (top-3 negative in 12 of 24 months).
+3. Use the **rolling-window** flag operationally. It catches 2 employee(s) a monthly report would miss.
 4. Monthly scores are volume-driven. Report the average score per message alongside the sum, so quiet employees are not mislabelled as disengaged.
 5. Review each flagged window's messages before acting: automated sentiment is a screening tool, not a verdict.
 <!-- RESULTS:END -->
@@ -103,7 +100,7 @@ pip install -r requirements.txt
 cp .env.example .env               # Windows: copy .env.example .env
 ```
 
-No API keys are needed for the default run. `.env` is only required to change the data path or thresholds, or to use the transformer or LLM labelers.
+No API keys are needed for the default run — the sentiment labeler is a locally-run Hugging Face transformer model (`cardiffnlp/twitter-roberta-base-sentiment-latest`), installed via `requirements.txt`. `.env` is only required to change the data path, thresholds, or to switch to the VADER or LLM labelers.
 
 The dataset ships in `data/raw/test.csv`. To use a different copy, place it there or set `RAW_DATA_PATH` in `.env`.
 
@@ -119,7 +116,7 @@ jupyter notebook employee_sentiment_analysis.ipynb
 **Option B: command line (reproduces every output from raw data)**
 
 ```bash
-python run_pipeline.py                  # uses SENTIMENT_METHOD from .env (default: vader)
+python run_pipeline.py                  # uses SENTIMENT_METHOD from .env (default: transformer)
 pytest -q                               # run the unit tests
 ```
 
@@ -134,9 +131,8 @@ The method is read from `SENTIMENT_METHOD` in `.env`, which both the notebook an
 pip install anthropic                   # or: pip install openai
 python run_pipeline.py --method llm
 
-# Hugging Face transformer
-pip install transformers torch
-python run_pipeline.py --method transformer
+# VADER (lexicon-based, lighter-weight fallback — already installed)
+python run_pipeline.py --method vader
 ```
 
 LLM labels are cached in `data/llm_cache.csv`, one row per unique message. This has three effects:
@@ -160,11 +156,13 @@ LLM labels are cached in `data/llm_cache.csv`, one row per unique message. This 
 
 | Back-end | Description | Reproducibility |
 |---|---|---|
+| `transformer` *(code default)* | `cardiffnlp/twitter-roberta-base-sentiment-latest`, a RoBERTa model fine-tuned for sentiment on social/informal text. Runs locally via `transformers` + `torch`, no API key. | Deterministic, offline |
 | `llm` | Claude or GPT, zero-shot prompt, temperature 0 | Cached per message in `data/llm_cache.csv` |
-| `vader` *(code default)* | Lexicon + rule model built for informal text. Handles negation, intensifiers, punctuation and capitalisation. | Deterministic, offline |
-| `transformer` | `cardiffnlp/twitter-roberta-base-sentiment-latest` | Deterministic |
+| `vader` | Lexicon + rule model built for informal text. Handles negation, intensifiers, punctuation and capitalisation. Lighter-weight fallback. | Deterministic, offline |
 
 The method used for the reported results is stated at the top of the results summary above.
+
+**Labeling rule (transformer, default).** The message (subject + cleaned body, truncated to the model's token limit) is passed through `cardiffnlp/twitter-roberta-base-sentiment-latest`, which outputs a probability for each of Positive / Neutral / Negative; the highest-probability class is taken as the label. The model is deterministic (no sampling), so results are reproducible across runs without any cache.
 
 **Labeling rule (LLM).** A fixed prompt (`LLM_PROMPT` in `src/sentiment.py`) asks the model for the overall sentiment the *sender* expresses, as exactly one word. It defines the three classes:
 - **Positive:** appreciation, enthusiasm, satisfaction, good news, friendly tone.
